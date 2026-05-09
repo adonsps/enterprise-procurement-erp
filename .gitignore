@@ -1,0 +1,16 @@
+# Odoo Database and Filestore (Crucial: Do not commit these!)
+db_data/
+filestore/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore the real config to keep passwords safe, but we will track a template
+config/odoo.conf

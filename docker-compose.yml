@@ -1,0 +1,26 @@
+version: '3.1'
+services:
+  web:
+    build: .
+    depends_on:
+      - db
+    ports:
+      - "8069:8069"
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ./config:/etc/odoo
+      - ./filestore:/var/lib/odoo
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=odoo_pwd
+    command: ["odoo", "-u", "base", "--dev=all"] # Enables debug mode and hot-reload
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD=odoo_pwd
+      - POSTGRES_USER=odoo
+    volumes:
+      - ./db_data:/var/lib/postgresql/data
