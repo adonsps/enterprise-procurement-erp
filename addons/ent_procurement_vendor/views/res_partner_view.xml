@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_inherit_procurement_vms" model="ir.ui.view">
+        <field name="name">res.partner.procurement.vms.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            
+            <xpath expr="//notebook" position="inside">
+                <page string="E-Procurement &amp; VMS" name="procurement_vms">
+                    <group>
+                        <group string="Vendor Prequalification">
+                            <field name="is_pre_qualified" widget="boolean_toggle"/>
+                            <field name="vendor_type"/>
+                        </group>
+                        <group string="Compliance &amp; Performance">
+                            <field name="blacklist_status" widget="badge" 
+                                   decoration-success="blacklist_status == 'active'" 
+                                   decoration-warning="blacklist_status == 'warning'" 
+                                   decoration-danger="blacklist_status == 'blacklisted'"/>
+                            <field name="vpe_trust_score" widget="progressbar"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
