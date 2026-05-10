@@ -18,9 +18,11 @@
                     </div>
                     <group>
                         <group>
-                            <field name="request_title" placeholder="e.g., Procurement Benchmarking Consulting"/>
-                            <field name="requestor_id"/>
+                            <field name="request_title" placeholder="e.g., IT Hardware Refresh"/>
+                            <field name="category_id"/>
                             <field name="department"/>
+                            <field name="requestor_id"/>
+                            <field name="pic_id"/>
                         </group>
                         <group>
                             <field name="estimated_budget"/>

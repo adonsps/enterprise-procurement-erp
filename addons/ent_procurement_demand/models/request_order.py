@@ -1,4 +1,4 @@
-from odoo import models, fields, apia
+from odoo import models, fields, api
 
 class RequestOrder(models.Model):
     _name = 'ent.request.order'
@@ -9,6 +9,19 @@ class RequestOrder(models.Model):
     request_title = fields.Char(string='Request Title', required=True)
     department = fields.Char(string='Department')
     requestor_id = fields.Many2one('res.users', string='Requestor', default=lambda self: self.env.user)
+
+    # New Category & Routing Fields
+    category_id = fields.Many2one('product.category', string='Procurement Category', required=True)
+    pic_id = fields.Many2one('res.users', string='Procurement PIC', readonly=True, 
+                             help="Auto-assigned based on the Category.")
+
+    # Auto-assign the PIC when the category changes
+    @api.onchange('category_id')
+    def _onchange_category_id(self):
+        if self.category_id and self.category_id.procurement_pic_id:
+            self.pic_id = self.category_id.procurement_pic_id
+        else:
+            self.pic_id = False
     
     # Financials & Docs
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company)
@@ -21,7 +34,7 @@ class RequestOrder(models.Model):
     tor_filename = fields.Char(string='TOR Filename')
     tor_attachment = fields.Binary(string='Terms of Reference (TOR)', attachment=True)
     
-    # State Management (The "Hard Gates")
+    # State Management
     state = fields.Selection([
         ('draft', 'Draft'),
         ('submitted', 'Waiting Approval'),
@@ -29,6 +42,7 @@ class RequestOrder(models.Model):
         ('rejected', 'Rejected'),
     ], string='Status', default='draft', required=True)
 
+    # --- ADD THIS NEW BLOCK ---
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -46,4 +60,3 @@ class RequestOrder(models.Model):
     def action_approve(self):
         for rec in self:
             rec.state = 'approved'
-

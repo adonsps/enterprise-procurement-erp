@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_category_property_form_inherit_procurement" model="ir.ui.view">
+        <field name="name">product.category.procurement.form</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='first']" position="after">
+                <group name="procurement_rules" string="E-Procurement Routing Rules">
+                    <field name="procurement_pic_id"/>
+                    <field name="requires_two_envelope"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
