@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tender_form" model="ir.ui.view">
+        <field name="name">ent.tender.form</field>
+        <field name="model">ent.tender</field>
+        <field name="arch" type="xml">
+            <form string="Tender Workspace">
+                <header>
+                    <button name="action_publish" string="Publish &amp; Invite" type="object" class="oe_highlight" invisible="state != 'draft'"/>
+                    <button name="action_start_tech_eval" string="Close Bidding &amp; Evaluate Tech" type="object" class="oe_highlight" invisible="state != 'published'"/>
+                    <button name="action_open_commercial_envelope" string="Unlock Commercial Envelopes" type="object" class="oe_highlight" invisible="state != 'tech_eval'" confirm="Are you sure? This will break the commercial seal for all technically qualified vendors."/>
+                    
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published,tech_eval,comm_eval,awarded"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="title"/>
+                            <field name="ro_id" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Requested Items">
+                            <field name="line_ids">
+                                <tree editable="bottom">
+                                    <field name="name" width="70%"/>
+                                    <field name="quantity" width="15%"/>
+                                    <field name="uom_id" width="15%"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Vendor Invitations">
+                            <field name="vendor_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <p class="text-muted mt-2"><em>Only pre-qualified and active vendors can be selected.</em></p>
+                        </page>
+                        <page string="Vendor Submissions (Two-Envelope)">
+                            <field name="bid_ids">
+                                <tree editable="bottom" decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
+                                    <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
+                                    
+                                    <field name="tech_proposal_filename" invisible="1"/>
+                                    <field name="tech_proposal" filename="tech_proposal_filename" widget="binary"/>
+                                    <field name="tech_status" readonly="parent.state not in ['published', 'tech_eval']"/>
+                                    
+                                    <field name="commercial_price" invisible="parent.state not in ['comm_eval', 'awarded']" readonly="tech_status != 'passed'"/>
+                                    <field name="currency_id" invisible="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tender" model="ir.actions.act_window">
+        <field name="name">Tenders Workspace</field>
+        <field name="res_model">ent.tender</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_ent_sourcing" name="Sourcing" parent="ent_procurement_demand.menu_ent_procurement_root" sequence="20"/>
+    <menuitem id="menu_tender" name="Tenders Workspace" parent="menu_ent_sourcing" action="action_tender" sequence="10"/>
+</odoo>
