@@ -13,6 +13,11 @@
                     <field name="state" widget="statusbar" statusbar_visible="draft,published,tech_eval,comm_eval,awarded"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_pos" type="object" class="oe_stat_button" icon="fa-credit-card" invisible="po_count == 0">
+                            <field name="po_count" widget="statinfo" string="Purchase Orders"/>
+                        </button>
+                    </div>
                     <div class="oe_title">
                         <h1><field name="name" readonly="1"/></h1>
                     </div>
@@ -25,8 +30,11 @@
                     <notebook>
                         <page string="Requested Items">
                             <field name="line_ids">
-                                <tree editable="bottom">
-                                    <field name="name" width="70%"/>
+                                <tree editable="bottom" create="false">
+                                    
+                                    <field name="name" width="30%" readonly="1" force_save="1"/>
+                                    
+                                    <field name="product_id" width="30%" required="1"/>
                                     <field name="quantity" width="15%"/>
                                     <field name="uom_id" width="15%"/>
                                 </tree>
@@ -38,16 +46,51 @@
                         </page>
                         <page string="Vendor Submissions (Two-Envelope)">
                             <field name="bid_ids">
-                                <tree editable="bottom" decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
+                                <tree decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
                                     <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
-                                    
-                                    <field name="tech_proposal_filename" invisible="1"/>
-                                    <field name="tech_proposal" filename="tech_proposal_filename" widget="binary"/>
                                     <field name="tech_status" readonly="parent.state not in ['published', 'tech_eval']"/>
                                     
                                     <field name="commercial_price" invisible="parent.state not in ['comm_eval', 'awarded']" readonly="tech_status != 'passed'"/>
                                     <field name="currency_id" invisible="1"/>
+                                    
+                                    <button name="action_award_bid" type="object" string="Award Winner" class="btn-success" invisible="parent.state != 'comm_eval' or tech_status != 'passed'" confirm="Are you sure you want to award this vendor and generate the Purchase Order?"/>
+                                    <field name="po_id" invisible="not po_id"/>
                                 </tree>
+                                
+                                <form string="Bid Submission">
+                                    <sheet>
+                                        <group>
+                                            <group>
+                                                <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
+                                            </group>
+                                            <group>
+                                                <field name="tech_status" readonly="parent.state not in ['published', 'tech_eval']"/>
+                                            </group>
+                                        </group>
+                                        
+                                        <group string="Envelope 1: Technical">
+                                            <field name="tech_proposal_filename" invisible="1"/>
+                                            <field name="tech_proposal" filename="tech_proposal_filename" widget="binary"/>
+                                        </group>
+                                        
+                                        <group string="Envelope 2: Commercial (Sealed)" invisible="parent.state not in ['comm_eval', 'awarded']">
+                                            <field name="bid_line_ids" readonly="tech_status != 'passed'">
+                                                <tree editable="bottom" create="false" delete="false">
+                                                    <field name="name"/>
+                                                    <field name="quantity"/>
+                                                    <field name="uom_id"/>
+                                                    <field name="price_unit"/>
+                                                    <field name="subtotal"/>
+                                                    <field name="currency_id" invisible="1"/>
+                                                </tree>
+                                            </field>
+                                            
+                                            <group class="oe_subtotal_footer oe_right">
+                                                <field name="commercial_price" class="oe_subtotal_footer_separator"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
                             </field>
                         </page>
                     </notebook>

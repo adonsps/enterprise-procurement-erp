@@ -32,6 +32,9 @@ class ProcurementTender(models.Model):
     # NEW: Link to the Bids
     bid_ids = fields.One2many('ent.tender.bid', 'tender_id', string='Vendor Submissions')
 
+    # NEW: Count the POs to display on the Smart Button
+    po_count = fields.Integer(compute='_compute_po_count', string='Purchase Orders')
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -78,11 +81,37 @@ class ProcurementTender(models.Model):
             if not passed_bids:
                 raise UserError("You cannot open Commercial Envelopes until at least one vendor has 'Passed' the Technical Evaluation.")
             rec.state = 'comm_eval'
+
+    def _compute_po_count(self):
+        for rec in self:
+            rec.po_count = len(rec.bid_ids.filtered(lambda b: b.po_id))
+
+    def action_view_pos(self):
+        self.ensure_one()
+        po_ids = self.bid_ids.mapped('po_id').ids
+        return {
+            'name': 'Purchase Orders',
+            'type': 'ir.actions.act_window',
+            'res_model': 'purchase.order',
+            'view_mode': 'tree,form',
+            'domain': [('id', 'in', po_ids)],
+        }
 class ProcurementTenderLine(models.Model):
     _name = 'ent.tender.line'
     _description = 'Tender Line Item'
 
     tender_id = fields.Many2one('ent.tender', string='Tender Reference', required=True, ondelete='cascade')
-    name = fields.Char(string='Item Description / Spec', required=True)
+    name = fields.Char(string='Requested Item (Free Text)', required=True)
+    
+    # NEW: The Master Data Product Mapping
+    product_id = fields.Many2one('product.product', string='Mapped Product')
+    
     quantity = fields.Float(string='Quantity', default=1.0, required=True)
     uom_id = fields.Many2one('uom.uom', string='Unit of Measure')
+
+    # Automatically update UoM if they select a product
+    @api.onchange('product_id')
+    def _onchange_product_id(self):
+        if self.product_id:
+            self.uom_id = self.product_id.uom_po_id or self.product_id.uom_id
+    

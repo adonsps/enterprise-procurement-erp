@@ -17,6 +17,94 @@ class TenderBid(models.Model):
         ('failed', 'Disqualified')
     ], string='Technical Result', default='pending', required=True)
     
-    # Envelope 2: Commercial
+    # Envelope 2: Commercial (Now calculated from the line items)
     currency_id = fields.Many2one(related='tender_id.ro_id.currency_id', string='Currency')
-    commercial_price = fields.Monetary(string='Envelope 2 (Commercial Total)', currency_field='currency_id')
+    bid_line_ids = fields.One2many('ent.tender.bid.line', 'bid_id', string='Commercial Pricing Breakdown')
+    commercial_price = fields.Monetary(string='Envelope 2 (Total)', compute='_compute_commercial_price', store=True, currency_field='currency_id')
+
+    po_id = fields.Many2one('purchase.order', string='Generated PO', readonly=True)
+
+    @api.depends('bid_line_ids.subtotal')
+    def _compute_commercial_price(self):
+        for rec in self:
+            rec.commercial_price = sum(line.subtotal for line in rec.bid_line_ids)
+
+    # Automatically generate the Bid Lines based on the Tender's requested items
+    @api.model_create_multi
+    def create(self, vals_list):
+        bids = super().create(vals_list)
+        for bid in bids:
+            if not bid.bid_line_ids and bid.tender_id:
+                lines = []
+                for t_line in bid.tender_id.line_ids:
+                    lines.append((0, 0, {
+                        'bid_id': bid.id,
+                        'tender_line_id': t_line.id,
+                    }))
+                bid.write({'bid_line_ids': lines})
+        return bids
+
+    def action_award_bid(self):
+        for bid in self:
+            if bid.tender_id.state != 'comm_eval':
+                raise UserError("You can only award a bid during the Commercial Evaluation phase.")
+            if bid.tech_status != 'passed':
+                raise UserError("You cannot award a disqualified vendor.")
+
+            # Strict Product Mapping Audit
+            unmapped_lines = bid.tender_id.line_ids.filtered(lambda l: not l.product_id)
+            if unmapped_lines:
+                raise UserError("Audit Failed: The Procurement PIC must map all Requested Items to a valid Master Data Product in the 'Requested Items' tab before awarding.")
+
+            # Draft the Purchase Order automatically
+            po_vals = {
+                'partner_id': bid.vendor_id.id,
+                'origin': bid.tender_id.name, 
+                'order_line': [],
+            }
+            
+            # Map the tender line items into the PO using the specific Bid Line unit prices
+            for line in bid.tender_id.line_ids:
+                # Find the corresponding pricing line submitted by this vendor
+                bid_line = bid.bid_line_ids.filtered(lambda b: b.tender_line_id == line)
+                actual_unit_price = bid_line.price_unit if bid_line else 0.0
+
+                po_vals['order_line'].append((0, 0, {
+                    'product_id': line.product_id.id,
+                    'name': line.name, 
+                    'product_qty': line.quantity,
+                    'product_uom': line.uom_id.id,
+                    'price_unit': actual_unit_price, 
+                    'date_planned': fields.Datetime.now(),
+                }))
+                
+            # Create the PO
+            new_po = self.env['purchase.order'].create(po_vals)
+            new_po.button_confirm() 
+            
+            # Link it and close the tender
+            bid.po_id = new_po.id
+            bid.tender_id.state = 'awarded'
+
+# --- NEW: The Bid Line Table ---
+class TenderBidLine(models.Model):
+    _name = 'ent.tender.bid.line'
+    _description = 'Tender Bid Line Item'
+
+    bid_id = fields.Many2one('ent.tender.bid', string='Bid Reference', required=True, ondelete='cascade')
+    tender_line_id = fields.Many2one('ent.tender.line', string='Tender Line', required=True)
+    
+    # Context pulled from the original Tender Line
+    name = fields.Char(related='tender_line_id.name', string='Description', readonly=True)
+    quantity = fields.Float(related='tender_line_id.quantity', string='Quantity', readonly=True)
+    uom_id = fields.Many2one(related='tender_line_id.uom_id', string='UoM', readonly=True)
+    
+    # Financials
+    currency_id = fields.Many2one(related='bid_id.currency_id')
+    price_unit = fields.Monetary(string='Unit Price', currency_field='currency_id')
+    subtotal = fields.Monetary(string='Subtotal', compute='_compute_subtotal', store=True, currency_field='currency_id')
+
+    @api.depends('quantity', 'price_unit')
+    def _compute_subtotal(self):
+        for line in self:
+            line.subtotal = line.quantity * line.price_unit

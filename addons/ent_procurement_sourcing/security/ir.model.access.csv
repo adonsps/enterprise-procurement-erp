@@ -2,3 +2,4 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_ent_tender_user,ent.tender.user,model_ent_tender,base.group_user,1,1,1,1
 access_ent_tender_line_user,ent.tender.line.user,model_ent_tender_line,base.group_user,1,1,1,1
 access_ent_tender_bid_user,ent.tender.bid.user,model_ent_tender_bid,base.group_user,1,1,1,1
+access_ent_tender_bid_line_user,ent.tender.bid.line.user,model_ent_tender_bid_line,base.group_user,1,1,1,1
