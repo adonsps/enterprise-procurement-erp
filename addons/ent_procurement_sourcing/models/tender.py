@@ -10,6 +10,9 @@ class ProcurementTender(models.Model):
     # Link back to the Demand phase
     ro_id = fields.Many2one('ent.request.order', string='Source Request Order', domain="[('state', '=', 'approved')]")
     
+    # NEW: Pull the AI-detected category from the RO
+    category_id = fields.Many2one(related='ro_id.category_id', string='Category', store=True)
+    
     # The State Machine for the Two-Envelope process
     state = fields.Selection([
         ('draft', 'Draft'),

@@ -26,15 +26,24 @@
                             <field name="title"/>
                             <field name="ro_id" options="{'no_create': True}"/>
                         </group>
+                        <group>
+                            <field name="category_id" readonly="1" force_save="1"/>
+                        </group>
                     </group>
                     <notebook>
                         <page string="Requested Items">
                             <field name="line_ids">
                                 <tree editable="bottom" create="false">
-                                    
                                     <field name="name" width="30%" readonly="1" force_save="1"/>
                                     
-                                    <field name="product_id" width="30%" required="1"/>
+                                    <field name="product_id" width="30%" required="1" 
+                                           context="{
+                                               'default_detailed_type': 'consu', 
+                                               'default_purchase_ok': True, 
+                                               'default_sale_ok': False, 
+                                               'default_categ_id': parent.category_id
+                                           }"/>
+                                           
                                     <field name="quantity" width="15%"/>
                                     <field name="uom_id" width="15%"/>
                                 </tree>
