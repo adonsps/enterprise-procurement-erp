@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tender_bid_form_inherit_clm" model="ir.ui.view">
+        <field name="name">ent.tender.bid.form.inherit.clm</field>
+        <field name="model">ent.tender</field>
+        <field name="inherit_id" ref="ent_procurement_sourcing.view_tender_form"/>
+        <field name="arch" type="xml">
+            
+            <xpath expr="//field[@name='bid_ids']//form//field[@name='tech_proposal_filename']/.." position="before">
+                <group string="Contract Management" invisible="parent.state not in ['comm_eval', 'awarded']">
+                    <group>
+                        <field name="generate_contract" widget="boolean_toggle" invisible="parent.state == 'awarded'"/>
+                        <field name="contract_type" invisible="generate_contract == False and parent.state != 'awarded'"/>
+                    </group>
+                    <group>
+                        <field name="contract_id" invisible="not contract_id"/>
+                    </group>
+                    
+                    <div colspan="2" class="text-end mt-2" invisible="contract_id != False or parent.state != 'awarded'">
+                        <button name="action_generate_contract_manual" type="object" string="Generate Contract" class="btn btn-warning" icon="fa-file-text-o" confirm="Are you sure you want to generate the contract documents for this vendor?"/>
+                    </div>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

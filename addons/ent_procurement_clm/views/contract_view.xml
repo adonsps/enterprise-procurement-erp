@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_contract_kanban" model="ir.ui.view">
+        <field name="name">ent.contract.kanban</field>
+        <field name="model">ent.contract</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column" quick_create="false">
+                <field name="state"/>
+                <field name="name"/>
+                <field name="title"/>
+                <field name="vendor_id"/>
+                <field name="end_date"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click p-2">
+                            <div class="mb-1">
+                                <strong class="o_kanban_record_title fs-6"><field name="title"/></strong>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <span class="badge text-bg-secondary"><field name="name"/></span>
+                            </div>
+                            
+                            <div class="text-muted text-truncate mt-2">
+                                <i class="fa fa-building-o" title="Vendor"/> <field name="vendor_id"/>
+                            </div>
+                            <div class="text-muted">
+                                <i class="fa fa-calendar" title="Expires"/> Exp: <field name="end_date"/>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_contract_form" model="ir.ui.view">
+        <field name="name">ent.contract.form</field>
+        <field name="model">ent.contract</field>
+        <field name="arch" type="xml">
+            <form string="Contract">
+                <header>
+                    <button name="action_activate" string="Activate Contract" type="object" class="btn-success" invisible="state != 'draft'"/>
+                    <button name="action_terminate" string="Terminate" type="object" class="btn-danger" invisible="state not in ['active', 'expiring']" confirm="Are you sure you want to manually terminate this contract?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,expiring,expired"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Contract Details">
+                            <field name="title"/>
+                            <field name="vendor_id"/>
+                            <field name="po_id"/>
+                            <field name="pic_id"/>
+                        </group>
+                        <group string="Timeline &amp; Value">
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="notice_period_days"/>
+                            <field name="contract_value"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Milestones &amp; SLAs">
+                            <field name="milestone_ids">
+                                <tree editable="bottom" decoration-success="status == 'completed'" decoration-danger="status == 'delayed'" decoration-muted="status == 'pending'">
+                                    <field name="name"/>
+                                    <field name="expected_date"/>
+                                    <field name="status"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_contract" model="ir.actions.act_window">
+        <field name="name">Contracts</field>
+        <field name="res_model">ent.contract</field>
+        <field name="view_mode">kanban,tree,form</field>
+    </record>
+
+    <menuitem id="menu_ent_clm" name="Contracts" parent="ent_procurement_demand.menu_ent_procurement_root" sequence="50"/>
+    <menuitem id="menu_contract_workspace" name="Contract Workspace" parent="menu_ent_clm" action="action_contract" sequence="10"/>
+</odoo>

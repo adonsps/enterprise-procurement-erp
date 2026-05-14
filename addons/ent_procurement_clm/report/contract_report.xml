@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_contract_pdf" model="ir.actions.report">
+        <field name="name">Contract Document (PDF)</field>
+        <field name="model">ent.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ent_procurement_clm.template_report_contract</field>
+        <field name="report_file">ent_procurement_clm.template_report_contract</field>
+        <field name="binding_model_id" ref="model_ent_contract"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="template_report_contract">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    
+                    <t t-set="fallback_currency" t-value="doc.currency_id or doc.env.company.currency_id"/>
+                    
+                    <div class="page" style="font-size: 13px;">
+                        
+                        <t t-if="doc.contract_type == 'outline'">
+                            
+                            <div class="row mb-4 border-bottom pb-2">
+                                <div class="col-6 text-center">
+                                    <h3 class="fw-bold">PERJANJIAN PENGIKATAN HARGA</h3>
+                                    <p class="mb-0">Ref Kontrak: <span t-field="doc.name"/></p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <h3 class="fw-bold">OUTLINE AGREEMENT</h3>
+                                    <p class="mb-0">Contract Ref: <span t-field="doc.name"/></p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <div class="col-6 text-justify">
+                                    <p><strong>Antara:</strong></p>
+                                    <p><strong>Kawan Lama Group</strong> (Selanjutnya disebut "Pembeli")</p>
+                                    <p><strong><span t-field="doc.vendor_id.name"/></strong> (Selanjutnya disebut "Vendor")</p>
+                                </div>
+                                <div class="col-6 text-justify">
+                                    <p><strong>Between:</strong></p>
+                                    <p><strong>Kawan Lama Group</strong> (Hereinafter referred to as the "Buyer")</p>
+                                    <p><strong><span t-field="doc.vendor_id.name"/></strong> (Hereinafter referred to as the "Vendor")</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6 text-justify">
+                                    <h5 class="fw-bold">Pasal 1: Ruang Lingkup &amp; Pengikatan Harga</h5>
+                                    <p>Perjanjian Pengikatan Harga ini mengikat Harga Satuan dari item yang terdaftar di bawah ini. Kuantitas yang tercantum hanya merupakan perkiraan. Pembeli tidak memiliki komitmen hukum untuk membeli kuantitas minimum.</p>
+                                </div>
+                                <div class="col-6 text-justify">
+                                    <h5 class="fw-bold">Article 1: Scope &amp; Price Lock</h5>
+                                    <p>This Outline Agreement locks the Unit Prices of the listed items below. The quantities listed are forecasts only. The Buyer has no legal commitment to purchase minimum quantities.</p>
+                                </div>
+                            </div>
+                            
+                            <table class="table table-sm table-bordered mt-2 mb-1">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Deskripsi / Item Description</th>
+                                        <th class="text-center">Satuan / UoM</th>
+                                        <th class="text-end">Harga Satuan / Locked Unit Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="bid_record" t-value="doc.env['ent.tender.bid'].search([('contract_id', '=', doc.id)], limit=1)"/>
+                                    <t t-foreach="bid_record.bid_line_ids" t-as="line">
+                                        <tr>
+                                            <td><span t-field="line.name"/></td>
+                                            <td class="text-center"><span t-field="line.uom_id.name"/></td>
+                                            <td class="text-end"><span t-esc="line.price_unit" t-options='{"widget": "monetary", "display_currency": fallback_currency}'/></td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                            <p class="text-end mt-1 text-muted"><small>*Nilai Referensi Total / Total Reference Value: <span t-esc="doc.contract_value" t-options='{"widget": "monetary", "display_currency": fallback_currency}'/></small></p>
+                            
+                            <div class="row mt-4">
+                                <div class="col-6 text-justify">
+                                    <h5 class="fw-bold">Pasal 2: Perlindungan Pembeli &amp; Pengakhiran</h5>
+                                    <p><strong>2.1 Pengakhiran:</strong> Pembeli berhak mengakhiri perjanjian ini kapan saja dengan pemberitahuan tertulis tiga puluh (30) hari sebelumnya tanpa denda apapun.</p>
+                                    <p><strong>2.2 Penyesuaian Harga:</strong> Jika harga pasar untuk item turun di bawah harga yang diikat, Vendor setuju untuk menyamakan dengan harga pasar yang lebih rendah. Kegagalan melakukan hal ini memberikan hak kepada Pembeli untuk pengakhiran secepatnya.</p>
+                                </div>
+                                <div class="col-6 text-justify">
+                                    <h5 class="fw-bold">Article 2: Buyer Protection &amp; Termination</h5>
+                                    <p><strong>2.1 Termination:</strong> The Buyer reserves the right to terminate this agreement at any time with thirty (30) days prior written notice without any penalty.</p>
+                                    <p><strong>2.2 Price Matching:</strong> If market prices for the items fall below the locked prices, the Vendor agrees to match the lower market price. Failure to do so grants the Buyer the right to immediate termination.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-5 pt-5">
+                                <div class="col-6 text-center">
+                                    <p>_______________________</p>
+                                    <p><strong>Kawan Lama Group</strong><br/>Pembeli / Buyer</p>
+                                </div>
+                                <div class="col-6 text-center">
+                                    <p>_______________________</p>
+                                    <p><strong><span t-field="doc.vendor_id.name"/></strong><br/>Vendor</p>
+                                </div>
+                            </div>
+                        </t>
+
+                        <t t-if="doc.contract_type != 'outline'">
+                            <h2 class="text-center" style="margin-bottom: 30px;">
+                                <span t-if="doc.contract_type == 'pks'">PERJANJIAN KERJA SAMA (PKS)</span>
+                                <span t-if="doc.contract_type == 'pjk'">PERJANJIAN JASA KONSTRUKSI (PJK)</span>
+                            </h2>
+                            <p><strong>Contract Ref:</strong> <span t-field="doc.name"/></p>
+                            <p><strong>First Party:</strong> Kawan Lama Group</p>
+                            <p><strong>Second Party:</strong> <span t-field="doc.vendor_id.name"/></p>
+                            <h4 class="mt-4">Article 1: Scope &amp; Deliverables</h4>
+                            <p>This agreement outlines the operational delivery requirements mapped under Purchase Order <strong><span t-field="doc.po_id.name"/></strong>.</p>
+                            <h4 class="mt-4">Article 2: Commercial Value</h4>
+                            <p>Total Contract Valuation: <strong><span t-esc="doc.contract_value" t-options='{"widget": "monetary", "display_currency": fallback_currency}'/></strong>.</p>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>
