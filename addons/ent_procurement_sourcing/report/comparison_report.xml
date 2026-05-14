@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_tender_comparison" model="ir.actions.report">
+        <field name="name">Vendor Comparison Matrix</field>
+        <field name="model">ent.tender</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">ent_procurement_sourcing.report_tender_comparison</field>
+        <field name="report_file">ent_procurement_sourcing.report_tender_comparison</field>
+        <field name="binding_model_id" ref="model_ent_tender"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_tender_comparison">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <t t-set="fallback_currency" t-value="doc.ro_id.currency_id or doc.env.company.currency_id"/>
+                    
+                    <div class="page" style="font-size: 13px;">
+                        <h3 class="text-center fw-bold mb-4">TENDER VENDOR COMPARISON MATRIX</h3>
+                        
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <p class="mb-1"><strong>Tender Ref:</strong> <span t-field="doc.name"/></p>
+                                <p class="mb-1"><strong>Tender Title:</strong> <span t-field="doc.title"/></p>
+                            </div>
+                            <div class="col-6 text-end">
+                                <p class="mb-1"><strong>Tender Purpose:</strong> <span t-field="doc.tender_purpose"/></p>
+                                <p class="mb-1"><strong>Proposed Winner:</strong> <span t-field="doc.proposed_bid_id.vendor_id.name"/></p>
+                            </div>
+                        </div>
+
+                        <t t-set="valid_bids" t-value="doc.bid_ids.filtered(lambda b: b.tech_status == 'passed')"/>
+                        
+                        <table class="table table-bordered table-sm mt-2">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Item Description</th>
+                                    <th class="text-center">Qty / UoM</th>
+                                    <t t-foreach="valid_bids" t-as="bid">
+                                        <th class="text-end">
+                                            <span t-field="bid.vendor_id.name"/><br/>
+                                            <small t-if="bid.id == doc.proposed_bid_id.id" class="text-success">(PROPOSED)</small>
+                                        </th>
+                                    </t>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.line_ids" t-as="line">
+                                    <td><span t-field="line.name"/></td>
+                                    <td class="text-center"><span t-field="line.quantity"/> <span t-field="line.uom_id.name"/></td>
+                                    
+                                    <t t-foreach="valid_bids" t-as="bid">
+                                        <t t-set="bid_line" t-value="bid.bid_line_ids.filtered(lambda l: l.tender_line_id.id == line.id)"/>
+                                        <td class="text-end">
+                                            <span t-if="bid_line" t-esc="bid_line.price_unit" t-options='{"widget": "monetary", "display_currency": fallback_currency}'/>
+                                            <span t-else="">-</span>
+                                        </td>
+                                    </t>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-bold table-light">
+                                    <td colspan="2" class="text-end">TOTAL COMMERCIAL BID:</td>
+                                    <t t-foreach="valid_bids" t-as="bid">
+                                        <td class="text-end"><span t-esc="bid.commercial_price" t-options='{"widget": "monetary", "display_currency": fallback_currency}'/></td>
+                                    </t>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

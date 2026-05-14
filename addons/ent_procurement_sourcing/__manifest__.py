@@ -5,8 +5,10 @@
     'depends': ['ent_procurement_demand', 'ent_procurement_vendor', 'purchase'],
     'data': [
         'security/ir.model.access.csv',
-        'data/sequence.xml',
+        'data/default_tender_matrix.xml',
+        'report/comparison_report.xml',
         'views/tender_view.xml',
+        'views/tender_approval_workflow_view.xml',
     ],
     'installable': True,
     'application': True,

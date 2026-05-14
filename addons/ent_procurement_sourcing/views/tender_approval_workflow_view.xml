@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tender_form_inherit_approval" model="ir.ui.view">
+        <field name="name">ent.tender.form.inherit.approval</field>
+        <field name="model">ent.tender</field>
+        <field name="inherit_id" ref="ent_procurement_sourcing.view_tender_form"/>
+        <field name="arch" type="xml">
+            
+            <xpath expr="//field[@name='bid_ids']//tree//field[@name='tech_status']" position="after">
+                <field name="is_awarded" widget="boolean_toggle" readonly="1"/>
+            </xpath>
+            
+            <xpath expr="//header" position="inside">
+                <button name="ent_procurement_sourcing.action_report_tender_comparison" type="action" string="Print Vendor Comparison" class="btn-secondary" icon="fa-print" invisible="state in ['draft', 'published', 'tech_eval']"/>
+                <button name="action_approve_tender" string="Approve Tender" type="object" class="btn-success" invisible="state != 'to_approve'"/>
+                <button name="action_reject_tender" string="Reject" type="object" class="btn-danger" invisible="state != 'to_approve'"/>
+            </xpath>
+
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning text-center o_form_header" role="alert" invisible="state != 'to_approve'">
+                    <strong>Tender Award Pending Approval From: </strong>
+                    <field name="current_approver_id" readonly="1"/>
+                </div>
+            </xpath>
+
+            <xpath expr="//field[@name='ro_id']" position="after">
+                <field name="tender_purpose" required="state == 'comm_eval'" readonly="state in ['to_approve', 'awarded']"/>
+                <field name="proposed_vendor_id" invisible="not proposed_bid_id"/>
+                <field name="proposed_bid_id" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//field[@name='bid_ids']//tree//field[@name='commercial_price']" position="attributes">
+                <attribute name="invisible">parent.state not in ['comm_eval', 'to_approve', 'awarded']</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='bid_ids']//form//field[@name='bid_line_ids']/.." position="attributes">
+                <attribute name="invisible">parent.state not in ['comm_eval', 'to_approve', 'awarded']</attribute>
+            </xpath>
+
+            <xpath expr="//button[@name='action_award_bid']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_award_bid']" position="after">
+                <button name="action_propose_award" type="object" string="Propose Award" class="btn-success" invisible="parent.state != 'comm_eval' or tech_status != 'passed'" confirm="Submit this vendor for Tender Approval?"/>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Approval Workflow" name="approval_matrix" invisible="not approval_line_ids">
+                    <field name="approval_line_ids" readonly="1">
+                        <tree decoration-success="status == 'approved'" decoration-danger="status == 'rejected'" decoration-muted="status == 'pending'">
+                            <field name="matrix_id"/>
+                            <field name="approver_id"/>
+                            <field name="status" widget="badge" decoration-success="status == 'approved'" decoration-danger="status == 'rejected'" decoration-warning="status == 'pending'"/>
+                            <field name="date_approved"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>

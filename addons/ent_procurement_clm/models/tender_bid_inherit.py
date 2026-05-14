@@ -15,11 +15,21 @@ class TenderBidInherit(models.Model):
     contract_id = fields.Many2one('ent.contract', string='Generated Contract', readonly=True)
 
     def _execute_contract_generation(self):
+        # 1. Safely import the library directly inside the function to bypass scope drops
+        try:
+            from docx import Document
+            HAS_DOCX = True
+        except ImportError:
+            HAS_DOCX = False
+
         for bid in self:
             if not bid.contract_type:
                 raise UserError("Please select a Contract Template type.")
             if bid.contract_id:
                 raise UserError("A contract has already been generated for this vendor.")
+                
+            if not HAS_DOCX:
+                raise UserError("The python-docx library is missing! To generate true .docx files, please run: pip install python-docx")
 
             template_name = dict(self._fields['contract_type'].selection).get(bid.contract_type)
             contract = self.env['ent.contract'].create({
@@ -33,9 +43,6 @@ class TenderBidInherit(models.Model):
                 'state': 'draft'
             })
             bid.contract_id = contract.id
-
-            if not HAS_DOCX:
-                raise UserError("The python-docx library is missing! Run: pip install python-docx")
 
             doc = Document()
             
