@@ -50,14 +50,22 @@
                             </field>
                         </page>
                         <page string="Vendor Invitations">
-                            <field name="vendor_ids" widget="many2many_tags" options="{'no_create': True}"/>
-                            <p class="text-muted mt-2"><em>Only pre-qualified and active vendors can be selected.</em></p>
+                            <div class="alert alert-info mt-2" role="alert" invisible="state != 'draft'">
+                                <i class="fa fa-info-circle"/> Select the vendors to invite. This list will lock permanently once the Tender is Published.
+                            </div>
+                            <field name="vendor_ids" readonly="state != 'draft'" options="{'no_create': True}">
+                                <tree string="Invited Vendors">
+                                    <field name="name"/>
+                                    <field name="email" optional="show"/>
+                                    <field name="phone" optional="show"/>
+                                    <field name="city" optional="show"/>
+                                </tree>
+                            </field>
                         </page>
                         <page string="Vendor Submissions (Two-Envelope)">
                             <field name="bid_ids">
                                 <tree decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
                                     <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
-                                    <field name="tech_status" readonly="parent.state not in ['published', 'tech_eval']"/>
                                     
                                     <field name="commercial_price" invisible="parent.state not in ['comm_eval', 'awarded']" readonly="tech_status != 'passed'"/>
                                     <field name="currency_id" invisible="1"/>
@@ -69,17 +77,17 @@
                                 <form string="Bid Submission">
                                     <sheet>
                                         <group>
-                                            <group>
-                                                <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
-                                            </group>
-                                            <group>
-                                                <field name="tech_status" readonly="parent.state not in ['published', 'tech_eval']"/>
-                                            </group>
+                                            <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
                                         </group>
                                         
                                         <group string="Envelope 1: Technical">
-                                            <field name="tech_proposal_filename" invisible="1"/>
-                                            <field name="tech_proposal" filename="tech_proposal_filename" widget="binary"/>
+                                            <group>
+                                                <field name="tech_proposal_filename" invisible="1"/>
+                                                <field name="tech_proposal" filename="tech_proposal_filename" widget="binary" readonly="parent.state != 'published'"/>
+                                            </group>
+                                            <group>
+                                                <field name="tech_status" readonly="parent.state != 'tech_eval'"/>
+                                            </group>
                                         </group>
                                         
                                         <group string="Envelope 2: Commercial (Sealed)" invisible="parent.state not in ['comm_eval', 'awarded']">

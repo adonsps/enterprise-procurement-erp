@@ -1,9 +1,16 @@
 from odoo import models, fields, api
 from odoo.exceptions import UserError
+from odoo.exceptions import ValidationError
 
 class TenderBid(models.Model):
     _name = 'ent.tender.bid'
     _description = 'Tender Bid Submission'
+
+    # FIX 3: Strict Database Lock against duplicate vendors
+    _sql_constraints = [
+        ('unique_vendor_tender', 'UNIQUE(tender_id, vendor_id)', 
+         'Audit Block: A vendor can only have ONE submission per Tender!')
+    ]
 
     tender_id = fields.Many2one('ent.tender', string='Tender', required=True, ondelete='cascade')
     vendor_id = fields.Many2one('res.partner', string='Vendor', required=True)
@@ -23,6 +30,20 @@ class TenderBid(models.Model):
     commercial_price = fields.Monetary(string='Envelope 2 (Total)', compute='_compute_commercial_price', store=True, currency_field='currency_id')
 
     po_id = fields.Many2one('purchase.order', string='Generated PO', readonly=True)
+
+    @api.constrains('tender_id', 'vendor_id')
+    def _check_duplicate_vendor_submission(self):
+        for bid in self:
+            if bid.tender_id and bid.vendor_id:
+                # Search the database for any other bid in this tender with the exact same vendor
+                duplicate_count = self.env['ent.tender.bid'].search_count([
+                    ('tender_id', '=', bid.tender_id.id),
+                    ('vendor_id', '=', bid.vendor_id.id),
+                    ('id', '!=', bid.id) # Exclude the current line being checked
+                ])
+                
+                if duplicate_count > 0:
+                    raise ValidationError(f"Audit Block: '{bid.vendor_id.name}' already has a submission! Each vendor is strictly limited to one submission per Tender.")
 
     @api.depends('bid_line_ids.subtotal')
     def _compute_commercial_price(self):

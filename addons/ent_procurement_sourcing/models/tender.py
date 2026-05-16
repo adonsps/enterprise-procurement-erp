@@ -1,3 +1,4 @@
+from odoo.exceptions import UserError
 from odoo import models, fields, api
 
 class ProcurementTender(models.Model):
@@ -99,6 +100,13 @@ class ProcurementTender(models.Model):
             'view_mode': 'tree,form',
             'domain': [('id', 'in', po_ids)],
         }
+    def action_publish(self):
+        for tender in self:
+            # BUG FIX 1: Strict Check for Invited Vendors
+            if not tender.vendor_ids:
+                raise UserError("Validation Error: You must select at least one vendor in the 'Invited Vendors' tab before publishing this Tender.")
+            
+            tender.state = 'published'
 class ProcurementTenderLine(models.Model):
     _name = 'ent.tender.line'
     _description = 'Tender Line Item'

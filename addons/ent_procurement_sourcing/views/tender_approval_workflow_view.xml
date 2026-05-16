@@ -6,7 +6,7 @@
         <field name="inherit_id" ref="ent_procurement_sourcing.view_tender_form"/>
         <field name="arch" type="xml">
             
-            <xpath expr="//field[@name='bid_ids']//tree//field[@name='tech_status']" position="after">
+            <xpath expr="//field[@name='bid_ids']//tree" position="inside">
                 <field name="is_awarded" widget="boolean_toggle" readonly="1"/>
             </xpath>
             
@@ -41,6 +41,7 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
             <xpath expr="//button[@name='action_award_bid']" position="after">
+                <field name="tech_status" invisible="1"/>
                 <button name="action_propose_award" type="object" string="Propose Award" class="btn-success" invisible="parent.state != 'comm_eval' or tech_status != 'passed'" confirm="Submit this vendor for Tender Approval?"/>
             </xpath>
 
