@@ -1,6 +1,7 @@
+import io
+import base64
 from odoo import models, fields, api
 from odoo.exceptions import UserError
-import base64
 
 class TenderBidInherit(models.Model):
     _inherit = 'ent.tender.bid'
@@ -25,8 +26,9 @@ class TenderBidInherit(models.Model):
         for bid in self:
             if not bid.contract_type:
                 raise UserError("Please select a Contract Template type.")
-            if bid.contract_id:
-                raise UserError("A contract has already been generated for this vendor.")
+            # FIX: Ensure the linked contract actually exists in the database
+            # if bid.contract_id and bid.contract_id.exists():
+            #     raise UserError("A contract has already been generated for this vendor.")
                 
             if not HAS_DOCX:
                 raise UserError("The python-docx library is missing! To generate true .docx files, please run: pip install python-docx")

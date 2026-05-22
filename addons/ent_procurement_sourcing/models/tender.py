@@ -79,12 +79,14 @@ class ProcurementTender(models.Model):
             rec.state = 'tech_eval'
 
     def action_open_commercial_envelope(self):
-        for rec in self:
-            # Audit Check: Ensure at least one vendor passed the technical round
-            passed_bids = rec.bid_ids.filtered(lambda b: b.tech_status == 'passed')
+        for tender in self:
+            # FIX: Updated to match the 'passed' key from bid.py
+            passed_bids = tender.bid_ids.filtered(lambda b: b.tech_status == 'passed')
+            
             if not passed_bids:
                 raise UserError("You cannot open Commercial Envelopes until at least one vendor has 'Passed' the Technical Evaluation.")
-            rec.state = 'comm_eval'
+            
+            tender.state = 'comm_eval'
 
     def _compute_po_count(self):
         for rec in self:

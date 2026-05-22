@@ -71,41 +71,45 @@ class TenderBid(models.Model):
                 raise UserError("You can only award a bid during the Commercial Evaluation phase.")
             if bid.tech_status != 'passed':
                 raise UserError("You cannot award a disqualified vendor.")
-
+            # 1. ALWAYS generate the CLM Document (This acts as your PPH for Outline Agreements)
+            if hasattr(bid, '_execute_contract_generation'):
+                bid._execute_contract_generation()
             # Strict Product Mapping Audit
             unmapped_lines = bid.tender_id.line_ids.filtered(lambda l: not l.product_id)
             if unmapped_lines:
                 raise UserError("Audit Failed: The Procurement PIC must map all Requested Items to a valid Master Data Product in the 'Requested Items' tab before awarding.")
 
-            # Draft the Purchase Order automatically
-            po_vals = {
-                'partner_id': bid.vendor_id.id,
-                'origin': bid.tender_id.name, 
-                'order_line': [],
-            }
             
-            # Map the tender line items into the PO using the specific Bid Line unit prices
-            for line in bid.tender_id.line_ids:
-                # Find the corresponding pricing line submitted by this vendor
-                bid_line = bid.bid_line_ids.filtered(lambda b: b.tender_line_id == line)
-                actual_unit_price = bid_line.price_unit if bid_line else 0.0
+            # 2. FIX: ONLY create a Purchase Order if the Tender is Transactional
+            if bid.tender_id.tender_purpose == 'transactional':
+                # Draft the Purchase Order automatically
+                po_vals = {
+                    'partner_id': bid.vendor_id.id,
+                    'origin': bid.tender_id.name, 
+                    'order_line': [],
+                }
+                # Map the tender line items into the PO using the specific Bid Line unit prices
+                for line in bid.tender_id.line_ids:
+                    # Find the corresponding pricing line submitted by this vendor
+                    bid_line = bid.bid_line_ids.filtered(lambda b: b.tender_line_id == line)
+                    actual_unit_price = bid_line.price_unit if bid_line else 0.0
 
-                po_vals['order_line'].append((0, 0, {
-                    'product_id': line.product_id.id,
-                    'name': line.name, 
-                    'product_qty': line.quantity,
-                    'product_uom': line.uom_id.id,
-                    'price_unit': actual_unit_price, 
-                    'date_planned': fields.Datetime.now(),
-                }))
+                    po_vals['order_line'].append((0, 0, {
+                        'product_id': line.product_id.id,
+                        'name': line.name, 
+                        'product_qty': line.quantity,
+                        'product_uom': line.uom_id.id,
+                        'price_unit': actual_unit_price, 
+                        'date_planned': fields.Datetime.now(),
+                    }))
+                    
+                # Create the PO
+                new_po = self.env['purchase.order'].create(po_vals)
+                new_po.button_confirm() 
                 
-            # Create the PO
-            new_po = self.env['purchase.order'].create(po_vals)
-            new_po.button_confirm() 
-            
-            # Link it and close the tender
-            bid.po_id = new_po.id
-            bid.tender_id.state = 'awarded'
+                # Link it and close the tender
+                bid.po_id = new_po.id
+                bid.tender_id.state = 'awarded'
 
 # --- NEW: The Bid Line Table ---
 class TenderBidLine(models.Model):

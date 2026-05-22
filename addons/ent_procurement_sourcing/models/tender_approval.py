@@ -39,13 +39,53 @@ class ProcurementTenderInherit(models.Model):
         ('to_approve', 'Pending Approval')
     ], ondelete={'to_approve': 'set default'})
 
-    proposed_bid_id = fields.Many2one('ent.tender.bid', string='Proposed Bid', readonly=True, copy=False)
-    
-    # NEW: Pull the clean Vendor Name for the UI
-    proposed_vendor_id = fields.Many2one('res.partner', related='proposed_bid_id.vendor_id', string='Proposed Winner')
+    # Keep legacy fields invisible to prevent database crashes during upgrade
+    proposed_bid_id = fields.Many2one('ent.tender.bid', string='Legacy Proposed Bid', copy=False)
+    proposed_vendor_id = fields.Many2one('res.partner', related='proposed_bid_id.vendor_id', string='Legacy Proposed Winner')
 
     approval_line_ids = fields.One2many('ent.tender.approval.line', 'tender_id', string='Approval Workflow')
     current_approver_id = fields.Many2one('res.users', string='Pending Approver', readonly=True, copy=False)
+
+    def action_submit_for_approval(self):
+        for tender in self:
+            if not tender.tender_purpose:
+                raise UserError("Validation Error: Please define the 'Tender Purpose' (Transactional or Outline Agreement) before requesting approval.")
+            
+            proposed_bids = tender.bid_ids.filtered(lambda b: b.is_proposed)
+            if not proposed_bids:
+                raise UserError("Validation Error: You must select at least one winning vendor using the 'Select Winner' button before submitting for approval.")
+            
+            # Guardrail: Transactional POs usually only go to one vendor. Outline Agreements can be split.
+            if tender.tender_purpose == 'transactional' and len(proposed_bids) > 1:
+                raise UserError("Validation Error: Transactional (PO) Tenders only support ONE winning vendor in this version. To split POs, please process them as separate Outline Agreements.")
+
+            # Calculate total valuation of ALL proposed winners to hit the correct matrix tier
+            total_valuation = sum(proposed_bids.mapped('commercial_price'))
+
+            matrix_records = self.env['ent.tender.approval.matrix'].search([], order='sequence asc')
+            if not matrix_records:
+                tender.state = 'comm_eval'
+                for bid in proposed_bids:
+                    bid.is_awarded = True
+                    bid.action_award_bid()
+                return
+
+            required_approvals = []
+            for matrix in matrix_records:
+                required_approvals.append((0, 0, {
+                    'matrix_id': matrix.id,
+                    'approver_id': matrix.approver_id.id,
+                    'status': 'pending'
+                }))
+                # Matrix checks the COMBINED value of all selected Outline Agreements
+                if matrix.limit_amount > 0.0 and total_valuation <= matrix.limit_amount:
+                    break 
+            
+            tender.write({
+                'approval_line_ids': required_approvals,
+                'state': 'to_approve',
+                'current_approver_id': required_approvals[0][2]['approver_id']
+            })
 
     def action_approve_tender(self):
         for tender in self:
@@ -62,13 +102,19 @@ class ProcurementTenderInherit(models.Model):
             else:
                 tender.current_approver_id = False
                 
-                # NEW: Final approval reached! Mark the vendor as the official winner.
-                if tender.proposed_bid_id:
-                    tender.proposed_bid_id.is_awarded = True
+                proposed_bids = tender.bid_ids.filtered(lambda b: b.is_proposed)
+                for bid in proposed_bids:
+                    bid.is_awarded = True
                 
-                # Temporarily revert state so the original Award function runs smoothly
-                tender.state = 'comm_eval'
-                tender.proposed_bid_id.action_award_bid()
+                # Automatically generate contracts for ALL approved winners sequentially
+                for bid in proposed_bids:
+                    # FIX: Force the state back to comm_eval before EACH vendor is processed
+                    # so they bypass the security block individually.
+                    tender.state = 'comm_eval'
+                    bid.action_award_bid()
+                
+                # Once every vendor has their contract/PO, permanently lock the Tender
+                tender.state = 'awarded'
 
     def action_reject_tender(self):
         for tender in self:
@@ -79,46 +125,23 @@ class ProcurementTenderInherit(models.Model):
             if pending:
                 pending[0].write({'status': 'rejected'})
             
-            # Send back to commercial evaluation and clear the proposed winner so PIC can choose someone else
+            # Un-flag all proposed winners so the buyer can choose new ones
+            for bid in tender.bid_ids:
+                bid.is_proposed = False
+
             tender.write({
                 'state': 'comm_eval', 
                 'current_approver_id': False, 
-                'proposed_bid_id': False
             })
             tender.approval_line_ids.unlink()
 
 class TenderBidInherit(models.Model):
     _inherit = 'ent.tender.bid'
 
-    # NEW: Flag to indicate this vendor won
     is_awarded = fields.Boolean(string='Awarded Winner', default=False)
+    # NEW: Flag to hold the vendor in the "Cart" before submission
+    is_proposed = fields.Boolean(string='Proposed', default=False)
 
-    def action_propose_award(self):
-        # This replaces the immediate PO/Contract generation with the routing workflow
+    def action_toggle_propose(self):
         for bid in self:
-            if not bid.tender_id.tender_purpose:
-                raise UserError("Please define the 'Tender Purpose' (Transactional or Outline Agreement) on the main Tender form before requesting approval.")
-            
-            matrix_records = self.env['ent.tender.approval.matrix'].search([], order='sequence asc')
-            if not matrix_records:
-                # If admin hasn't set up rules yet, auto-approve
-                bid.tender_id.state = 'comm_eval'
-                bid.action_award_bid()
-                return
-
-            required_approvals = []
-            for matrix in matrix_records:
-                required_approvals.append((0, 0, {
-                    'matrix_id': matrix.id,
-                    'approver_id': matrix.approver_id.id,
-                    'status': 'pending'
-                }))
-                if matrix.limit_amount > 0.0 and bid.commercial_price <= matrix.limit_amount:
-                    break 
-            
-            bid.tender_id.write({
-                'proposed_bid_id': bid.id,
-                'approval_line_ids': required_approvals,
-                'state': 'to_approve',
-                'current_approver_id': required_approvals[0][2]['approver_id']
-            })
+            bid.is_proposed = not bid.is_proposed

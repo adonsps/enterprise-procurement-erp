@@ -62,7 +62,7 @@
                                 </tree>
                             </field>
                         </page>
-                        <page string="Vendor Submissions (Two-Envelope)">
+                        <page string="Vendor Submissions (Two-Envelope)" invisible="state == 'draft'">
                             <field name="bid_ids">
                                 <tree decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
                                     <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
@@ -115,7 +115,33 @@
             </form>
         </field>
     </record>
-
+    <record id="view_tender_tree" model="ir.ui.view">
+        <field name="name">ent.tender.tree</field>
+        <field name="model">ent.tender</field>
+        <field name="arch" type="xml">
+            <tree string="Tenders Workspace" 
+                  decoration-muted="state == 'draft'" 
+                  decoration-info="state == 'published'" 
+                  decoration-warning="state in ['tech_eval', 'comm_eval', 'to_approve']" 
+                  decoration-success="state == 'awarded'">
+                
+                <field name="name" string="Tender Ref" decoration-bf="1"/>
+                <field name="title" string="Tender Title"/>
+                <field name="ro_id" string="Demand Ref" optional="show"/>
+                <field name="tender_purpose" optional="show"/>
+                <field name="proposed_vendor_id" string="Proposed / Awarded Vendor" optional="show"/>
+                
+                <field name="state" 
+                       widget="badge" 
+                       decoration-muted="state == 'draft'"
+                       decoration-info="state == 'published'"
+                       decoration-primary="state == 'tech_eval'"
+                       decoration-warning="state == 'comm_eval'"
+                       decoration-danger="state == 'to_approve'"
+                       decoration-success="state == 'awarded'"/>
+            </tree>
+        </field>
+    </record>
     <record id="action_tender" model="ir.actions.act_window">
         <field name="name">Tenders Workspace</field>
         <field name="res_model">ent.tender</field>

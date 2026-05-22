@@ -40,7 +40,7 @@
                                     <t t-foreach="valid_bids" t-as="bid">
                                         <th class="text-end">
                                             <span t-field="bid.vendor_id.name"/><br/>
-                                            <small t-if="bid.id == doc.proposed_bid_id.id" class="text-success">(PROPOSED)</small>
+                                            <small t-if="bid.is_proposed" class="text-success">(PROPOSED)</small>
                                         </th>
                                     </t>
                                 </tr>
