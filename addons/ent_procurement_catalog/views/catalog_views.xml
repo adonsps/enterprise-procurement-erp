@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_catalog_order_wizard_form" model="ir.ui.view">
+        <field name="name">ent.catalog.order.wizard.form</field>
+        <field name="model">ent.catalog.order.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Order from Catalog">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Locked PPH Pricing:</strong> This item is covered under an active Outline Agreement. 
+                    </div>
+                    <group>
+                        <field name="catalog_item_id" options="{'no_open': True}"/>
+                        <label for="quantity"/>
+                        <div class="o_row">
+                            <field name="quantity"/>
+                            <field name="uom_id" force_save="1"/>
+                        </div>
+                        <field name="price_unit" force_save="1"/>
+                        <field name="currency_id" invisible="1"/>
+                    </group>
+                    <footer>
+                        <button name="action_confirm_order" string="Create Request Order" type="object" class="btn-success" icon="fa-shopping-cart"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_catalog_item_kanban" model="ir.ui.view">
+        <field name="name">ent.catalog.item.kanban</field>
+        <field name="model">ent.catalog.item</field>
+        <field name="arch" type="xml">
+            <kanban create="false" class="o_kanban_mobile" sample="1">
+                <field name="name"/>
+                <field name="vendor_id"/>
+                <field name="price_unit"/>
+                <field name="currency_id"/>
+                <field name="uom_id"/>
+                <field name="product_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click d-flex flex-column" style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; background-color: #ffffff;">
+                            
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong style="font-size: 16px; color: #212529;">
+                                    <field name="name"/>
+                                </strong>
+                            </div>
+                            <div class="mb-3">
+                                <span class="badge text-bg-info"><i class="fa fa-building-o"/> <field name="vendor_id"/></span>
+                            </div>
+
+                            <div style="font-size: 20px; font-weight: bold; color: #0f5132; margin-bottom: 15px;">
+                                <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/> 
+                                <span style="font-size: 14px; font-weight: normal; color: #6c757d;">/ <field name="uom_id"/></span>
+                            </div>
+                            
+                            <div class="mt-auto">
+                                <button name="action_create_ro_from_catalog" type="object" class="btn btn-primary w-100">
+                                    <i class="fa fa-plus-circle"/> Add to Request
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_ent_catalog_item" model="ir.actions.act_window">
+        <field name="name">Internal Catalog</field>
+        <field name="res_model">ent.catalog.item</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Welcome to the Procurement Catalog!
+            </p>
+            <p>
+                Items here are automatically sourced from active Outline Agreements (PPH) with locked-in pricing. 
+                Approve an Outline Agreement in the Sourcing module to populate this storefront.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_ent_catalog" name="Internal Catalog" parent="purchase.menu_procurement_management" action="action_ent_catalog_item" sequence="5"/>
+    <record id="view_contract_form_inherit_catalog" model="ir.ui.view">
+        <field name="name">ent.contract.form.inherit.catalog</field>
+        <field name="model">ent.contract</field>
+        <field name="inherit_id" ref="ent_procurement_clm.view_contract_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <notebook>
+                    <page string="Outline Agreement Items">
+                        <field name="catalog_item_ids" readonly="1">
+                            <tree>
+                                <field name="product_id"/>
+                                <field name="price_unit"/>
+                                <field name="uom_id"/>
+                                <field name="active" widget="boolean_toggle"/>
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+</odoo>

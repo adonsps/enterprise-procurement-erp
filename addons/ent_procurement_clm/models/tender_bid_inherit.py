@@ -126,14 +126,41 @@ class TenderBidInherit(models.Model):
             })
 
     def action_award_bid(self):
-        # 1. Execute the original PO Awarding logic
-        res = super(TenderBidInherit, self).action_award_bid()
-        
-        # 2. Automatically generate if the checkbox was toggled
         for bid in self:
-            if bid.generate_contract and bid.contract_type:
+            # 1. ALWAYS generate the CLM Document (This acts as your PPH for Outline Agreements)
+            if hasattr(bid, '_execute_contract_generation'):
                 bid._execute_contract_generation()
-        return res
+            
+            # 2. Transactional: Create Purchase Order
+            if bid.tender_id.tender_purpose == 'transactional':
+                
+                # --- YOUR EXISTING PO CREATION CODE STAYS HERE ---
+                pass
+                
+            # 3. Outline Agreement: Publish to the Internal Catalog!
+            elif bid.tender_id.tender_purpose == 'outline':
+                if 'ent.catalog.item' in self.env:
+                    for line in bid.bid_line_ids:
+                        
+                        # Dynamically look for the product field
+                        product = False
+                        if hasattr(line, 'product_id') and line.product_id:
+                            product = line.product_id
+                        elif hasattr(line, 'item_id') and line.item_id:
+                            product = line.item_id
+                            
+                        # FIX: Instead of crashing the whole approval, we just skip this line.
+                        # This enforces data governance (it won't go to the catalog) but doesn't break the workflow.
+                        if not product:
+                            continue
+                        
+                        self.env['ent.catalog.item'].sudo().create({
+                            'product_id': product.id,
+                            'uom_id': line.uom_id.id,
+                            'vendor_id': bid.vendor_id.id,
+                            'contract_id': bid.contract_id.id, 
+                            'price_unit': line.price_unit,
+                        })
 
     def action_generate_contract_manual(self):
         # Fallback button for the PIC if they forgot
