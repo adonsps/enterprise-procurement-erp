@@ -63,8 +63,8 @@ class TenderBidInherit(models.Model):
 
                 # Parties
                 row = layout.add_row().cells
-                row[0].text = f"Antara:\nKawan Lama Group (Pembeli)\n{bid.vendor_id.name} (Vendor)"
-                row[1].text = f"Between:\nKawan Lama Group (Buyer)\n{bid.vendor_id.name} (Vendor)"
+                row[0].text = f"Antara:\nPT. Smart Procurement Plus (Pembeli)\n{bid.vendor_id.name} (Vendor)"
+                row[1].text = f"Between:\nPT. Smart Procurement Plus (Buyer)\n{bid.vendor_id.name} (Vendor)"
 
                 layout.add_row()
 
@@ -99,7 +99,7 @@ class TenderBidInherit(models.Model):
             
             else:
                 doc.add_heading(f"{template_name.upper()}", 0)
-                doc.add_paragraph(f"Contract Ref: {contract.name}\nFirst Party: Kawan Lama Group\nSecond Party: {bid.vendor_id.name}")
+                doc.add_paragraph(f"Contract Ref: {contract.name}\nFirst Party: PT. Smart Procurement Plus\nSecond Party: {bid.vendor_id.name}")
                 doc.add_paragraph(f"Total Valuation: {bid.commercial_price:,.2f} {bid.currency_id.name}")
 
             # Save and Attach

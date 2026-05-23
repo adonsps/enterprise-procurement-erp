@@ -35,12 +35,12 @@
                             <div class="row mb-4">
                                 <div class="col-6 text-justify">
                                     <p><strong>Antara:</strong></p>
-                                    <p><strong>Kawan Lama Group</strong> (Selanjutnya disebut "Pembeli")</p>
+                                    <p><strong>PT. Smart Procurement Plus</strong> (Selanjutnya disebut "Pembeli")</p>
                                     <p><strong><span t-field="doc.vendor_id.name"/></strong> (Selanjutnya disebut "Vendor")</p>
                                 </div>
                                 <div class="col-6 text-justify">
                                     <p><strong>Between:</strong></p>
-                                    <p><strong>Kawan Lama Group</strong> (Hereinafter referred to as the "Buyer")</p>
+                                    <p><strong>PT. Smart Procurement Plus</strong> (Hereinafter referred to as the "Buyer")</p>
                                     <p><strong><span t-field="doc.vendor_id.name"/></strong> (Hereinafter referred to as the "Vendor")</p>
                                 </div>
                             </div>
@@ -93,7 +93,7 @@
                             <div class="row mt-5 pt-5">
                                 <div class="col-6 text-center">
                                     <p>_______________________</p>
-                                    <p><strong>Kawan Lama Group</strong><br/>Pembeli / Buyer</p>
+                                    <p><strong>PT. Smart Procurement Plus</strong><br/>Pembeli / Buyer</p>
                                 </div>
                                 <div class="col-6 text-center">
                                     <p>_______________________</p>
@@ -108,7 +108,7 @@
                                 <span t-if="doc.contract_type == 'pjk'">PERJANJIAN JASA KONSTRUKSI (PJK)</span>
                             </h2>
                             <p><strong>Contract Ref:</strong> <span t-field="doc.name"/></p>
-                            <p><strong>First Party:</strong> Kawan Lama Group</p>
+                            <p><strong>First Party:</strong> PT. Smart Procurement Plus</p>
                             <p><strong>Second Party:</strong> <span t-field="doc.vendor_id.name"/></p>
                             <h4 class="mt-4">Article 1: Scope &amp; Deliverables</h4>
                             <p>This agreement outlines the operational delivery requirements mapped under Purchase Order <strong><span t-field="doc.po_id.name"/></strong>.</p>
