@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_ent_vendor_evaluation" model="ir.sequence">
+        <field name="name">Vendor Evaluation Sequence</field>
+        <field name="code">ent.vendor.evaluation</field>
+        <field name="prefix">VPE/%(year)s/%(month)s/</field>
+        <field name="padding">4</field>
+    </record>
+
+    <record id="view_vendor_evaluation_form" model="ir.ui.view">
+        <field name="name">ent.vendor.evaluation.form</field>
+        <field name="model">ent.vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <form string="Vendor Evaluation">
+                <header>
+                    <button name="action_submit_evaluation" string="Submit Scorecard" type="object" class="oe_highlight" invisible="state == 'submitted'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Document Links">
+                            <field name="vendor_id"/>
+                            <field name="picking_id"/>
+                            <field name="purchase_id"/>
+                        </group>
+                        <group string="Evaluation Details">
+                            <field name="evaluator_id" readonly="state == 'submitted'"/>
+                            <field name="evaluation_date" readonly="state == 'submitted'"/>
+                        </group>
+                    </group>
+                    <group string="Performance Metrics (Required)">
+                        <group>
+                            <field name="score_delivery" readonly="state == 'submitted'"/>
+                            <field name="score_quality" readonly="state == 'submitted'"/>
+                            <field name="score_service" readonly="state == 'submitted'"/>
+                        </group>
+                        
+                        <group col="1">
+                            <div class="alert alert-info d-flex flex-column justify-content-center align-items-center" 
+                                 role="alert" 
+                                 style="width: 100%; height: 100%; min-height: 120px; padding: 20px; border-radius: 8px; margin: 0; white-space: nowrap;">
+                                 
+                                <div style="font-size: 22px; font-weight: bold; margin-bottom: 5px; color: #0c5460;">
+                                    Total Score
+                                </div>
+                                
+                                <div style="font-size: 38px; font-weight: bold; color: #0c5460; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px;">
+                                    <field name="total_score" readonly="1" force_save="1" nolabel="1" style="margin: 0; padding: 0;"/> 
+                                    <span>/ 5.0</span>
+                                </div>
+                                
+                            </div>
+                        </group>
+                    </group>
+                    
+                    <separator string="Additional Feedback"/>
+                    <field name="notes" nolabel="1" placeholder="Enter any specific issues, delays, or commendations here..." readonly="state == 'submitted'"/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers"/>
+                    <field name="activity_ids" widget="mail_activity"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_vendor_evaluation_tree" model="ir.ui.view">
+        <field name="name">ent.vendor.evaluation.tree</field>
+        <field name="model">ent.vendor.evaluation</field>
+        <field name="arch" type="xml">
+            <tree string="Vendor Evaluations" decoration-info="state == 'draft'" decoration-success="state == 'submitted'">
+                <field name="name"/>
+                <field name="vendor_id"/>
+                <field name="picking_id"/>
+                <field name="evaluation_date"/>
+                <field name="total_score" widget="progressbar"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'submitted'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_vendor_evaluation" model="ir.actions.act_window">
+        <field name="name">Vendor Evaluations</field>
+        <field name="res_model">ent.vendor.evaluation</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_vendor_evaluation" name="Vendor Evaluations" parent="purchase.menu_procurement_management" action="action_vendor_evaluation" sequence="99"/>
+
+    <record id="view_picking_form_inherit_evaluation" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.evaluation</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_evaluations" type="object" class="oe_stat_button" icon="fa-star" invisible="evaluation_count == 0">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value"><field name="evaluation_count"/></span>
+                        <span class="o_stat_text">Evaluation</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

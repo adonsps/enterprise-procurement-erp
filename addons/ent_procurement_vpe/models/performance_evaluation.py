@@ -14,10 +14,10 @@ class VendorPerformanceEvaluation(models.Model):
     evaluator_id = fields.Many2one('res.users', string='Evaluator (PIC)', default=lambda self: self.env.user, required=True)
     evaluation_date = fields.Date('Date', default=fields.Date.context_today, required=True)
 
-    # Scoring Metrics (1 to 5 scale)
-    score_delivery = fields.Selection([('1','1 - Very Late'),('2','2 - Late'),('3','3 - On Time'),('4','4 - Early'),('5','5 - Exceptional')], string="Delivery Timeliness", required=True, tracking=True)
-    score_quality = fields.Selection([('1','1 - Poor'),('2','2 - Below Specs'),('3','3 - Meets Specs'),('4','4 - High Quality'),('5','5 - Defect Free')], string="Product Quality", required=True, tracking=True)
-    score_service = fields.Selection([('1','1 - Unresponsive'),('2','2 - Slow'),('3','3 - Acceptable'),('4','4 - Proactive'),('5','5 - Excellent')], string="Communication & Service", required=True, tracking=True)
+    # FIX: Removed required=True from Python level so background drafts can be created empty
+    score_delivery = fields.Selection([('1','1 - Very Late'),('2','2 - Late'),('3','3 - On Time'),('4','4 - Early'),('5','5 - Exceptional')], string="Delivery Timeliness", tracking=True)
+    score_quality = fields.Selection([('1','1 - Poor'),('2','2 - Below Specs'),('3','3 - Meets Specs'),('4','4 - High Quality'),('5','5 - Defect Free')], string="Product Quality", tracking=True)
+    score_service = fields.Selection([('1','1 - Unresponsive'),('2','2 - Slow'),('3','3 - Acceptable'),('4','4 - Proactive'),('5','5 - Excellent')], string="Communication & Service", tracking=True)
     
     total_score = fields.Float('Overall Score (Out of 5)', compute='_compute_total_score', store=True)
     notes = fields.Text('Additional Feedback')
@@ -30,7 +30,6 @@ class VendorPerformanceEvaluation(models.Model):
     def _compute_total_score(self):
         for record in self:
             if record.score_delivery and record.score_quality and record.score_service:
-                # Simple average of the three metrics
                 total = (int(record.score_delivery) + int(record.score_quality) + int(record.score_service)) / 3.0
                 record.total_score = round(total, 2)
             else:
@@ -45,4 +44,7 @@ class VendorPerformanceEvaluation(models.Model):
 
     def action_submit_evaluation(self):
         for record in self:
+            # FIX: Enforce the mandatory check here when the user tries to submit the scorecard
+            if not record.score_delivery or not record.score_quality or not record.score_service:
+                raise UserError("Validation Error: Please fill in all performance metrics (Delivery, Quality, and Service) before submitting the scorecard.")
             record.state = 'submitted'
