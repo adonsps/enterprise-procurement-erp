@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_procurement_worklist_kanban" model="ir.ui.view">
+        <field name="name">ent.procurement.worklist.kanban</field>
+        <field name="model">ent.procurement.worklist</field>
+        <field name="arch" type="xml">
+            <kanban create="0" class="oe_background_grey o_kanban_dashboard">
+                <field name="name"/>
+                <field name="color"/>
+                <field name="pending_ro_count"/>
+                <field name="active_tender_count"/>
+                <field name="pending_approval_count"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_global_click #{kanban_color(record.color.raw_value)}">
+                            <div class="o_kanban_card_header">
+                                <div class="o_kanban_card_header_title">
+                                    <h3 class="o_primary"><field name="name"/></h3>
+                                </div>
+                            </div>
+                            <div class="container o_kanban_card_content mt-3 mb-3">
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-primary w-100 py-3" name="action_open_ro" type="object">
+                                            <div style="font-size: 28px; font-weight: bold;"><field name="pending_ro_count"/></div>
+                                            <div class="mt-1">Pending ROs</div>
+                                        </button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-warning w-100 py-3" name="action_open_tenders" type="object">
+                                            <div style="font-size: 28px; font-weight: bold;"><field name="active_tender_count"/></div>
+                                            <div class="mt-1">Ongoing Tenders</div>
+                                        </button>
+                                    </div>
+                                    <div class="col-4">
+                                        <button class="btn btn-outline-danger w-100 py-3" name="action_open_approvals" type="object">
+                                            <div style="font-size: 28px; font-weight: bold;"><field name="pending_approval_count"/></div>
+                                            <div class="mt-1">To Approve</div>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_procurement_worklist" model="ir.actions.act_window">
+        <field name="name">Procurement Worklist</field>
+        <field name="res_model">ent.procurement.worklist</field>
+        <field name="view_mode">kanban</field>
+    </record>
+
+    <record id="default_worklist_card" model="ent.procurement.worklist">
+        <field name="name">Procurement Control Tower</field>
+        <field name="color">3</field>
+    </record>
+
+    <menuitem id="menu_procurement_dashboard_root"
+              name="Dashboard"
+              action="action_procurement_worklist"
+              sequence="1"/>
+</odoo>

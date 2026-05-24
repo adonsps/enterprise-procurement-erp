@@ -127,31 +127,30 @@ class TenderBidInherit(models.Model):
 
     def action_award_bid(self):
         for bid in self:
-            # 1. ALWAYS generate the CLM Document (This acts as your PPH for Outline Agreements)
+            # 1. ALWAYS generate the CLM Document
             if hasattr(bid, '_execute_contract_generation'):
                 bid._execute_contract_generation()
             
             # 2. Transactional: Create Purchase Order
-            if bid.tender_id.tender_purpose == 'transactional':
-                
-                # --- YOUR EXISTING PO CREATION CODE STAYS HERE ---
+            if hasattr(bid.tender_id, 'tender_purpose') and bid.tender_id.tender_purpose == 'transactional':
+                # --- PO CREATION CODE STAYS HERE ---
                 pass
                 
             # 3. Outline Agreement: Publish to the Internal Catalog!
-            elif bid.tender_id.tender_purpose == 'outline':
+            elif hasattr(bid.tender_id, 'tender_purpose') and bid.tender_id.tender_purpose == 'outline':
                 if 'ent.catalog.item' in self.env:
                     for line in bid.bid_line_ids:
                         
-                        # FIX: We must trace THROUGH the tender_line_id to find the actual master data product!
+                        # FIX 1: Must trace THROUGH the tender_line_id to find the master product!
                         product = False
                         if hasattr(line, 'tender_line_id') and line.tender_line_id.product_id:
                             product = line.tender_line_id.product_id
                             
-                        # If there is no strict Master Data product, skip it (Data Governance)
+                        # If there is no strict Master Data product, skip it
                         if not product:
                             continue
                         
-                        # FIX: Group items by product! 
+                        # FIX 2: Group items by product! 
                         catalog_item = self.env['ent.catalog.item'].search([('product_id', '=', product.id)], limit=1)
                         if not catalog_item:
                             catalog_item = self.env['ent.catalog.item'].sudo().create({
@@ -165,8 +164,10 @@ class TenderBidInherit(models.Model):
                             'vendor_id': bid.vendor_id.id,
                             'contract_id': bid.contract_id.id, 
                             'price_unit': line.price_unit,
-                            'allocation_strategy': bid.tender_id.allocation_strategy,
+                            'allocation_strategy': getattr(bid.tender_id, 'allocation_strategy', 'equal'),
                             'award_rank': getattr(bid, 'award_rank', 1),
+                            # NEW: Initialize the Outline Agreement Capacity limit
+                            'remaining_qty': line.quantity, 
                         })
 
     def action_generate_contract_manual(self):

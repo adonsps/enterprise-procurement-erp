@@ -39,6 +39,11 @@ class ProcurementTender(models.Model):
     # NEW: Count the POs to display on the Smart Button
     po_count = fields.Integer(compute='_compute_po_count', string='Purchase Orders')
 
+    allocation_strategy = fields.Selection([
+        ('equal', 'Equal Division (Round Robin)'),
+        ('ranked', 'Ranked Allocation (Primary/Secondary)')
+    ], string='Allocation Strategy', default='equal', tracking=True)
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:

@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="paperformat_landscape_comparison" model="report.paperformat">
+        <field name="name">Landscape Vendor Comparison</field>
+        <field name="default" eval="True"/>
+        <field name="format">A4</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">15</field>
+        <field name="margin_bottom">15</field>
+        <field name="margin_left">10</field>
+        <field name="margin_right">10</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">10</field>
+        <field name="dpi">90</field>
+    </record>
+
     <record id="action_report_tender_comparison" model="ir.actions.report">
         <field name="name">Vendor Comparison Matrix</field>
         <field name="model">ent.tender</field>
@@ -8,6 +24,7 @@
         <field name="report_file">ent_procurement_sourcing.report_tender_comparison</field>
         <field name="binding_model_id" ref="model_ent_tender"/>
         <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="ent_procurement_sourcing.paperformat_landscape_comparison"/>
     </record>
 
     <template id="report_tender_comparison">
@@ -30,7 +47,12 @@
                             </div>
                         </div>
 
-                        <t t-set="valid_bids" t-value="doc.bid_ids.filtered(lambda b: b.tech_status == 'passed')"/>
+                        <t t-if="doc.tender_purpose == 'outline' and doc.allocation_strategy == 'ranked'">
+                            <t t-set="valid_bids" t-value="doc.bid_ids.filtered(lambda b: b.tech_status == 'passed').sorted(key=lambda b: int(b.award_rank) if b.award_rank else 99)"/>
+                        </t>
+                        <t t-else="">
+                            <t t-set="valid_bids" t-value="doc.bid_ids.filtered(lambda b: b.tech_status == 'passed').sorted(key=lambda b: b.commercial_price)"/>
+                        </t>
                         
                         <table class="table table-bordered table-sm mt-2">
                             <thead class="table-light">
@@ -41,6 +63,10 @@
                                         <th class="text-end">
                                             <span t-field="bid.vendor_id.name"/><br/>
                                             <small t-if="bid.is_proposed" class="text-success">(PROPOSED)</small>
+                                            
+                                            <div t-if="doc.allocation_strategy == 'ranked'" class="text-primary mt-1">
+                                                <small><strong>Rank: <span t-field="bid.award_rank"/></strong></small>
+                                            </div>
                                         </th>
                                     </t>
                                 </tr>

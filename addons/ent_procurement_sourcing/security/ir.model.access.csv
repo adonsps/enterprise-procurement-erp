@@ -5,3 +5,4 @@ access_ent_tender_bid_user,ent.tender.bid.user,model_ent_tender_bid,base.group_u
 access_ent_tender_bid_line_user,ent.tender.bid.line.user,model_ent_tender_bid_line,base.group_user,1,1,1,1
 access_ent_tender_approval_matrix,ent.tender.approval.matrix,model_ent_tender_approval_matrix,base.group_user,1,1,1,1
 access_ent_tender_approval_line,ent.tender.approval.line,model_ent_tender_approval_line,base.group_user,1,1,1,1
+access_ent_procurement_worklist,ent.procurement.worklist,model_ent_procurement_worklist,base.group_user,1,1,1,1

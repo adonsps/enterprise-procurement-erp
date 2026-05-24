@@ -30,6 +30,19 @@ class TenderBid(models.Model):
     commercial_price = fields.Monetary(string='Envelope 2 (Total)', compute='_compute_commercial_price', store=True, currency_field='currency_id')
 
     po_id = fields.Many2one('purchase.order', string='Generated PO', readonly=True)
+    # FIX: Keys must be strings ('1' instead of 1)
+    award_rank = fields.Selection([
+        ('1', 'Rank 1'),
+        ('2', 'Rank 2'),
+        ('3', 'Rank 3'),
+        ('4', 'Rank 4'),
+        ('5', 'Rank 5'),
+        ('6', 'Rank 6'),
+        ('7', 'Rank 7'),
+        ('8', 'Rank 8'),
+        ('9', 'Rank 9'),
+        ('10', 'Rank 10')
+    ], string='Vendor Rank (Allocation)', default='1', tracking=True)
 
     @api.constrains('tender_id', 'vendor_id')
     def _check_duplicate_vendor_submission(self):
@@ -128,6 +141,8 @@ class TenderBidLine(models.Model):
     currency_id = fields.Many2one(related='bid_id.currency_id')
     price_unit = fields.Monetary(string='Unit Price', currency_field='currency_id')
     subtotal = fields.Monetary(string='Subtotal', compute='_compute_subtotal', store=True, currency_field='currency_id')
+
+    award_rank = fields.Integer(string='Vendor Rank (Allocation)', default=1, tracking=True)
 
     @api.depends('quantity', 'price_unit')
     def _compute_subtotal(self):

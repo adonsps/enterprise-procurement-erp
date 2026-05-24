@@ -9,6 +9,7 @@
         'report/comparison_report.xml',
         'views/tender_view.xml',
         'views/tender_approval_workflow_view.xml',
+        'views/dashboard_views.xml', # NEW FILE
     ],
     'installable': True,
     'application': True,

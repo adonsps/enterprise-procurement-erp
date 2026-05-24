@@ -59,9 +59,33 @@ class ProcurementTenderInherit(models.Model):
             if tender.tender_purpose == 'transactional' and len(proposed_bids) > 1:
                 raise UserError("Validation Error: Transactional (PO) Tenders only support ONE winning vendor in this version. To split POs, please process them as separate Outline Agreements.")
 
+            
+           # --- RANKING VALIDATION ENGINE ---
+            if tender.tender_purpose == 'outline' and tender.allocation_strategy == 'ranked':
+                # FIX: Convert the string selection back to an integer for the math check
+                ranks = [int(b.award_rank) for b in proposed_bids if b.award_rank]
+                
+                # Check 1: No duplicates allowed
+                if len(set(ranks)) != len(ranks):
+                    raise UserError("Validation Error: Two or more proposed vendors have the same Award Rank. Each winner must have a unique rank (1, 2, 3...).")
+                
+                # Check 2: Must be perfectly sequential up to the total number of winners
+                expected_ranks = set(range(1, len(proposed_bids) + 1))
+                if set(ranks) != expected_ranks:
+                    raise UserError(f"Validation Error: Ranks must be perfectly sequential starting from 1 up to the total number of winners ({len(proposed_bids)}). Please adjust the dropdowns.")
+            
+            # --- SMART CONTRACT ASSIGNMENT ---
+            # Automatically assign the Outline Agreement contract template if applicable, 
+            # bypassing the need for manual data entry per vendor.
+            if tender.tender_purpose == 'outline':
+                for bid in proposed_bids:
+                    # Safely check if the CLM module is installed and linked
+                    if hasattr(bid, 'contract_type'):
+                        bid.contract_type = 'outline'
+
             # Calculate total valuation of ALL proposed winners to hit the correct matrix tier
             total_valuation = sum(proposed_bids.mapped('commercial_price'))
-
+            
             matrix_records = self.env['ent.tender.approval.matrix'].search([], order='sequence asc')
             if not matrix_records:
                 tender.state = 'comm_eval'

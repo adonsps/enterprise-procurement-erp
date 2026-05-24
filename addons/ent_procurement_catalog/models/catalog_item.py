@@ -49,6 +49,9 @@ class ProcurementCatalogVendorLine(models.Model):
     
     allocation_strategy = fields.Selection([('equal', 'Equal'), ('ranked', 'Ranked')], string='Strategy')
     award_rank = fields.Integer('Rank', default=1)
+    
+    # NEW: Track the capacity of the Outline Agreement!
+    remaining_qty = fields.Float('Remaining Capacity', default=0.0)
 
 class ProcurementCatalogWizard(models.TransientModel):
     _name = 'ent.catalog.order.wizard'
@@ -59,21 +62,9 @@ class ProcurementCatalogWizard(models.TransientModel):
     
     def action_confirm_order(self):
         item = self.catalog_item_id
-        lines = item.vendor_line_ids
         
-        if not lines:
-            raise UserError("No active vendors found for this item.")
-            
-        # --- SMART ALLOCATION ROUTER ---
-        strategy = lines[0].allocation_strategy
-        if strategy == 'ranked':
-            # Always pick the highest ranked vendor (lowest number)
-            selected_line = lines.sorted(key=lambda l: l.award_rank)[0]
-        else:
-            # Equal Division: Randomly assign to distribute the purchasing volume evenly
-            selected_line = random.choice(lines)
-
-        # Generate the RO with the specifically allocated vendor's price!
+        # Simply draft the Request Order and link the Catalog Item. 
+        # The auto-PO generation and smart split will trigger upon Manager Approval!
         ro = self.env['ent.request.order'].create({
             'request_title': f"Catalog Order: {item.name}",
             'state': 'draft',
@@ -81,7 +72,8 @@ class ProcurementCatalogWizard(models.TransientModel):
                 'name': item.name,
                 'quantity': self.quantity,
                 'uom_id': item.uom_id.id,
-                'estimated_price': selected_line.price_unit,
+                'estimated_price': item.display_price,
+                'catalog_item_id': item.id, # Link it!
             })]
         })
         

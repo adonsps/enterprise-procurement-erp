@@ -25,6 +25,7 @@
                         <group>
                             <field name="title"/>
                             <field name="ro_id" options="{'no_create': True}"/>
+                            <field name="allocation_strategy" invisible="tender_purpose != 'outline'"/>
                         </group>
                         <group>
                             <field name="category_id" readonly="1" force_save="1"/>
@@ -66,6 +67,7 @@
                             <field name="bid_ids">
                                 <tree decoration-success="tech_status == 'passed'" decoration-danger="tech_status == 'failed'" decoration-muted="tech_status == 'pending'">
                                     <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
+                                    <field name="award_rank" invisible="parent.allocation_strategy != 'ranked'"/>
                                     
                                     <field name="commercial_price" invisible="parent.state not in ['comm_eval', 'awarded']" readonly="tech_status != 'passed'"/>
                                     <field name="currency_id" invisible="1"/>
@@ -78,6 +80,7 @@
                                     <sheet>
                                         <group>
                                             <field name="vendor_id" domain="[('id', 'in', parent.vendor_ids)]"/>
+                                            <field name="award_rank" invisible="parent.allocation_strategy != 'ranked'"/>
                                         </group>
                                         
                                         <group string="Envelope 1: Technical">
