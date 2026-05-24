@@ -7,17 +7,11 @@
             <form string="Order from Catalog">
                 <sheet>
                     <div class="alert alert-info" role="alert">
-                        <strong>Locked PPH Pricing:</strong> This item is covered under an active Outline Agreement. 
+                        <strong>Smart Allocation Active:</strong> This item is covered under active Outline Agreements. The system will automatically route your request to the optimal vendor based on the established procurement strategy.
                     </div>
                     <group>
                         <field name="catalog_item_id" options="{'no_open': True}"/>
-                        <label for="quantity"/>
-                        <div class="o_row">
-                            <field name="quantity"/>
-                            <field name="uom_id" force_save="1"/>
-                        </div>
-                        <field name="price_unit" force_save="1"/>
-                        <field name="currency_id" invisible="1"/>
+                        <field name="quantity"/>
                     </group>
                     <footer>
                         <button name="action_confirm_order" string="Create Request Order" type="object" class="btn-success" icon="fa-shopping-cart"/>
@@ -34,8 +28,7 @@
         <field name="arch" type="xml">
             <kanban create="false" class="o_kanban_mobile" sample="1">
                 <field name="name"/>
-                <field name="vendor_id"/>
-                <field name="price_unit"/>
+                <field name="display_price"/>
                 <field name="currency_id"/>
                 <field name="uom_id"/>
                 <field name="product_id"/>
@@ -48,12 +41,10 @@
                                     <field name="name"/>
                                 </strong>
                             </div>
-                            <div class="mb-3">
-                                <span class="badge text-bg-info"><i class="fa fa-building-o"/> <field name="vendor_id"/></span>
-                            </div>
+                            
 
                             <div style="font-size: 20px; font-weight: bold; color: #0f5132; margin-bottom: 15px;">
-                                <field name="price_unit" widget="monetary" options="{'currency_field': 'currency_id'}"/> 
+                                <field name="display_price" widget="monetary" options="{'currency_field': 'currency_id'}"/> 
                                 <span style="font-size: 14px; font-weight: normal; color: #6c757d;">/ <field name="uom_id"/></span>
                             </div>
                             
@@ -95,10 +86,10 @@
                     <page string="Outline Agreement Items">
                         <field name="catalog_item_ids" readonly="1">
                             <tree>
-                                <field name="product_id"/>
-                                <field name="price_unit"/>
-                                <field name="uom_id"/>
-                                <field name="active" widget="boolean_toggle"/>
+                                <field name="catalog_item_id" string="Catalog Item"/>
+                                <field name="price_unit" widget="monetary"/>
+                                <field name="allocation_strategy"/>
+                                <field name="award_rank"/>
                             </tree>
                         </field>
                     </page>

@@ -142,24 +142,31 @@ class TenderBidInherit(models.Model):
                 if 'ent.catalog.item' in self.env:
                     for line in bid.bid_line_ids:
                         
-                        # Dynamically look for the product field
+                        # FIX: We must trace THROUGH the tender_line_id to find the actual master data product!
                         product = False
-                        if hasattr(line, 'product_id') and line.product_id:
-                            product = line.product_id
-                        elif hasattr(line, 'item_id') and line.item_id:
-                            product = line.item_id
+                        if hasattr(line, 'tender_line_id') and line.tender_line_id.product_id:
+                            product = line.tender_line_id.product_id
                             
-                        # FIX: Instead of crashing the whole approval, we just skip this line.
-                        # This enforces data governance (it won't go to the catalog) but doesn't break the workflow.
+                        # If there is no strict Master Data product, skip it (Data Governance)
                         if not product:
                             continue
                         
-                        self.env['ent.catalog.item'].sudo().create({
-                            'product_id': product.id,
-                            'uom_id': line.uom_id.id,
+                        # FIX: Group items by product! 
+                        catalog_item = self.env['ent.catalog.item'].search([('product_id', '=', product.id)], limit=1)
+                        if not catalog_item:
+                            catalog_item = self.env['ent.catalog.item'].sudo().create({
+                                'product_id': product.id,
+                                'uom_id': line.uom_id.id,
+                            })
+                        
+                        # Add the hidden vendor routing line
+                        self.env['ent.catalog.vendor.line'].sudo().create({
+                            'catalog_item_id': catalog_item.id,
                             'vendor_id': bid.vendor_id.id,
                             'contract_id': bid.contract_id.id, 
                             'price_unit': line.price_unit,
+                            'allocation_strategy': bid.tender_id.allocation_strategy,
+                            'award_rank': getattr(bid, 'award_rank', 1),
                         })
 
     def action_generate_contract_manual(self):

@@ -2,6 +2,5 @@ from odoo import models, fields
 
 class ContractInherit(models.Model):
     _inherit = 'ent.contract'
-
-    # This creates the backward link so the Contract can see its Catalog Items!
-    catalog_item_ids = fields.One2many('ent.catalog.item', 'contract_id', string='Outline Agreement Items')
+    # Changed to point to the new vendor lines table
+    catalog_item_ids = fields.One2many('ent.catalog.vendor.line', 'contract_id', string='Outline Agreement Items')
